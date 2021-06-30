@@ -1,0 +1,5 @@
+server/.idea/
+*.exe~
+server/fit/
+server/routers/commentsRouter_.go
+server/lastupdate.tmp

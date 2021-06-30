@@ -6,12 +6,15 @@
 // @author       ersut
 // @include        https://www.strava.com/*
 // @icon         <$ICON$>
-// @grant        none
+// @grant        GM_xmlhttpRequest
+// @connect      *
 // ==/UserScript==
 
 (function() {
     'use strict';
     var $ = jQuery;
+	
+	var server_host = "http://127.0.0.1:800"
 
     console.info("启动脚本");
 
@@ -26,15 +29,31 @@
         $("#login-button").click();
     }
 
-    function handle_data(page,page_data){
+    function handle_data(){
 
         var page_data_all = [];
         
+        //分页信息
+        var page = activityCollectionAdapter.attributes;
+        console.info("page",page);
+        //数据信息
+        var page_data = activityCollectionAdapter.activities;
+        console.info("page_data",page_data);
+		
         //获取几天内的数据
         var end_date = new Date().setDate(new Date().getDate()-65);
         console.info("截止日期",new Date(end_date));
 		
-		return next_page_data(page,page_data_all,page_data,end_date,1);
+		var page_data_all_promise = next_page_data(page,page_data_all,page_data,end_date,1);
+		
+		//promise的回调函数 异步的
+		page_data_all_promise.then(function(val){
+			console.info("success",val);
+		},function(){
+			console.info("error");
+		})
+		
+		return page_data_all;
         
     }
 
@@ -92,25 +111,60 @@
 		}
 	}
 
+	//上传fit文件
+	var uploadFit = function(id){
+		$.ajax({
+		  method: "get",
+		  url: "/activities/"+id+"/export_original",
+		  xhrFields: {
+			responseType: "arraybuffer",
+		  },
+		  success: function (res, _, xhr) {
+			  let blob = new Blob([res], {
+				  type: "application/octet-stream",
+			  });
+			  var fd = new FormData();
+			  fd.append('id', ''+id);
+			  fd.append('data', blob);
+			  
+			  GM_xmlhttpRequest({
+				method: "post",
+				url: server_host+'/v1/upload',
+				data: fd,
+				onload: function(res){
+					if(res.status === 200){
+						console.log("上传响应",res);
+					}else{
+						console.log('失败')
+						console.log(res)
+					}
+				},
+				onerror : function(err){
+					console.log('error')
+					console.log(err)
+				}
+			  });
+		  },
+		});
+	} 
+
     //获取当前地址
     var path = location.pathname;
     if(path === "/login"){
         console.info("开始登录");
         login();
-    }else if(path === "/athlete/training"){
+    } else if(path === "/athlete/training"){
         console.info("我的活动");
-        //分页信息
-        var page = activityCollectionAdapter.attributes;
-        console.info("page",page);
-        //数据信息
-        var page_data = activityCollectionAdapter.activities;
-        console.info("page_data",page_data);
 
-        var page_data_all_promise = handle_data(page,page_data)
-        console.info("page_data_all",page_data_all_promise);
+        console.info(handle_data());
+		
 
+    } else if( /\/activities\/\d+/i.test(path) ){
+        console.info("数据页面");
+		var id = 5538001926;
+		uploadFit(id);
 
-    }else {
+    } else {
         console.info("地址错误["+path+"]进行重定向");
         location.href = "/athlete/training"
     }
