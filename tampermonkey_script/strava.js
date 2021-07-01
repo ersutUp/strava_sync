@@ -14,7 +14,9 @@
     'use strict';
     var $ = jQuery;
 	
-	var server_host = "http://127.0.0.1:800"
+	var server_host = "http://127.0.0.1:800";
+		
+	var user_info = {};
 
     console.info("启动脚本");
 
@@ -23,38 +25,10 @@
     }
 
     var login = function(){
-        $("#email").val("83873@qq.com");
-        $("#password").val("");
+        $("#email").val(user_info.StravaEmail);
+        $("#password").val(user_info.StravaPass);
         $("#remember_me")[0].checked = true;
         $("#login-button").click();
-    }
-
-    function handle_data(){
-
-        var page_data_all = [];
-        
-        //分页信息
-        var page = activityCollectionAdapter.attributes;
-        console.info("page",page);
-        //数据信息
-        var page_data = activityCollectionAdapter.activities;
-        console.info("page_data",page_data);
-		
-        //获取几天内的数据
-        var end_date = new Date().setDate(new Date().getDate()-65);
-        console.info("截止日期",new Date(end_date));
-		
-		var page_data_all_promise = next_page_data(page,page_data_all,page_data,end_date,1);
-		
-		//promise的回调函数 异步的
-		page_data_all_promise.then(function(val){
-			console.info("success",val);
-		},function(){
-			console.info("error");
-		})
-		
-		return page_data_all;
-        
     }
 
     //过滤数据
@@ -131,6 +105,7 @@
 				method: "post",
 				url: server_host+'/v1/upload',
 				data: fd,
+				synchronous: true,
 				onload: function(res){
 					if(res.status === 200){
 						console.log("上传响应",res);
@@ -146,27 +121,107 @@
 			  });
 		  },
 		});
-	} 
+	}
 
-    //获取当前地址
-    var path = location.pathname;
-    if(path === "/login"){
-        console.info("开始登录");
-        login();
-    } else if(path === "/athlete/training"){
-        console.info("我的活动");
+    function handle_data(){
 
-        console.info(handle_data());
+        var page_data_all = [];
+        
+        //分页信息
+        var page = activityCollectionAdapter.attributes;
+        console.info("page",page);
+        //数据信息
+        var page_data = activityCollectionAdapter.activities;
+        console.info("page_data",page_data);
 		
+        //获取几天内的数据
+        var end_date = new Date().setDate(new Date().getDate()-user_info.BeforeDay);
+        console.info("截止日期",new Date(end_date));
+		
+		var page_data_all_promise = next_page_data(page,page_data_all,page_data,end_date,1);
+		
+		//promise的回调函数 异步的
+		page_data_all_promise.then(function(val){
+			console.info("success",val);
+			var data = [];
+			if(val.length > 0){
+				//循环转数组字符串
+				val.forEach(function(d,i){
+					data.push(JSON.stringify(d))
+				})
+			}
+			console.info("training data:",data)
+			//上传骑行数据给后台同步上传
+			GM_xmlhttpRequest({
+				method: "post",
+				url: server_host+'/v1/training',
+				data: JSON.stringify(data),
+				onload: function(res){
+					if(res.status === 200){
+						//todo 接收需要上传fit的id数据
+						console.log("上传数据响应",res);
+					}else{
+						console.log('失败')
+						console.log(res)
+					}
+				},
+				onerror : function(err){
+					console.log('error')
+					console.log(err)
+				}
+			});
+			//todo 获取fit文件并上传
+			//uploadFit(5538001926);
+		},function(){
+			console.info("error");
+		})
+		
+		return page_data_all;
+        
+    } 
 
-    } else if( /\/activities\/\d+/i.test(path) ){
-        console.info("数据页面");
-		var id = 5538001926;
-		uploadFit(id);
+	function handlePath(){
+		//获取当前地址
+		var path = location.pathname;
+		if(path === "/login"){
+			console.info("开始登录");
+			login();
+		} else if(path === "/athlete/training"){
+			console.info("我的活动");
+			
+			//todo 从cookie中获取最后一次同步日期
+			console.info(handle_data());
 
-    } else {
-        console.info("地址错误["+path+"]进行重定向");
-        location.href = "/athlete/training"
-    }
-    // Your code here...
+		} else {
+			console.info("地址错误["+path+"]进行重定向");
+			location.href = "/athlete/training"
+		}
+	}
+	
+	//获取用户信息
+	function getUserInfo(){
+		GM_xmlhttpRequest({
+			method: "get",
+			url: server_host+'/v1/user',
+			synchronous: true,
+			onload: function(res){
+				if(res.status === 200){
+					console.log("获取用户信息响应",res);
+					user_info = JSON.parse(res.response);
+					console.info("user_info",user_info);
+					handlePath();
+				}else{
+					console.log('获取用户信息异常',res.status)
+					console.log(res)
+				}
+			},
+			onerror : function(err){
+				console.log('获取用户信息出错')
+				console.log(err)
+			}
+		});
+	}
+	
+	
+	getUserInfo();
 })();

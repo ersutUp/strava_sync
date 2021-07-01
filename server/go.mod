@@ -8,5 +8,6 @@ require (
 	github.com/prometheus/common v0.10.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/smartystreets/goconvey v1.6.4
+	gorm.io/driver/sqlite v1.1.4
 	gorm.io/gorm v1.20.12
 )
