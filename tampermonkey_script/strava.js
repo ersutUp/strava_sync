@@ -15,6 +15,9 @@
     var $ = jQuery;
 	
 	var server_host = "http://127.0.0.1:800";
+	
+	var last_sync_key = "last_sync";
+	var err_count = "err_count";
 		
 	var user_info = {};
 
@@ -30,6 +33,92 @@
         $("#remember_me")[0].checked = true;
         $("#login-button").click();
     }
+	
+	//微信通知
+	function notice_wechat(msg){
+		
+		if( user_info.SendKey == undefined){
+			console.info("微信通知未配置")
+			return
+		}
+		GM_xmlhttpRequest({
+			method: "get",
+			url: 'https://sctapi.ftqq.com/'+user_info.SendKey+'.send?title='+msg,
+			onload: function(res){
+				console.info("微信通知响应",res);
+			},
+			onerror : function(err){
+				console.error("微信通知异常",err)
+			}
+		});
+	}
+	
+	function handleError(err_msg){
+		var err_num = localStorage.getItem(err_count);
+		if (err_num == null) {
+			err_num = 0;
+		} else {
+			//计数
+			err_num++
+		}
+		
+		//错误重试10次后无果则进入下一次定时
+		if (err_num >= 10){
+			localStorage.removeItem(err_count);
+			//todo 微信通知
+			notice_wechat(err_msg)
+			
+			next_sync(1);
+			return
+		} else {
+			//重试
+			localStorage.setItem(err_count,err_num);
+			setTimeout(function(){
+				location.reload()
+			},6*1000)
+		}
+	}
+	
+	/*
+		1:设置最后一次同步时间 并 开启定时任务
+		2:恢复定时
+	*/
+	function next_sync(type){
+		
+		var millisecond = 30*1000;
+		if (user_info.StravaSyncSecond != undefined) {
+			millisecond = millisecond + (user_info.StravaSyncSecond*1000);
+		} else {
+			//正常情况下StravaSyncSecond有值，若没值增大定时的默认值
+			millisecond = 300*1000;
+		}
+		var now = new Date();
+		if (type == 1) {			
+			//设置最后一次同步时间
+			localStorage.setItem(last_sync_key,now)
+		} else if (type == 2){
+			
+			//当前时间
+			var nowTime = now.getTime();
+			//获取最后一次同步日期，
+			var last_date_time = localStorage.getItem(last_sync_key);
+			if (last_date_time != null ) {
+				var last_date_data = new Date(last_date_time).getTime()
+				//计算定时经过的时间
+				var jet_lag = nowTime - last_date_data
+				if(jet_lag > 0 && millisecond > jet_lag){
+					millisecond = millisecond - jet_lag
+				}
+			}
+			
+		}
+		
+		console.info("距离下次定时："+millisecond)
+		//设置下次同步定时（比配置时间多30秒）
+		setTimeout(function(){
+			location.reload()
+		},millisecond)
+	}
 
     //过滤数据
     var parsing_bike_data = function(page_data_all,page_data,end_date){
@@ -110,17 +199,30 @@
 					if(res.status === 200){
 						console.log("上传响应",res);
 					}else{
-						console.log('失败')
-						console.log(res)
+						var err_msg = "上传fit文件状态码异常:["+res.status+"]"
+						handleError(err_msg)
+						console.error(err_msg,res)
 					}
 				},
 				onerror : function(err){
-					console.log('error')
-					console.log(err)
+					var err_msg = "上传fit文件请求异常"
+					handleError(err_msg)
+					console.error(err_msg,err)
 				}
 			  });
 		  },
 		});
+	}
+
+	async function uploadFits(ids){
+		
+		for(var i = 0 ; i < ids.length ; i++ ){
+			uploadFit(ids[i]);
+			await sleep(3000);
+		}
+		
+		//开启定时任务
+		next_sync(1);
 	}
 
     function handle_data(){
@@ -160,14 +262,26 @@
 					if(res.status === 200){
 						//todo 接收需要上传fit的id数据
 						console.log("上传数据响应",res);
+						var fit_ids = JSON.parse(res.response);
+						if(fit_ids != []){
+							//遍历下载fit
+							uploadFits(fit_ids);
+						} else {
+							console.log("无需上传fit文件");
+							
+							//开启定时任务
+							next_sync(1);
+						}
 					}else{
-						console.log('失败')
-						console.log(res)
+						var err_msg = "上传骑行数据状态码异常:["+res.status+"]"
+						handleError(err_msg)
+						console.error(err_msg,res)
 					}
 				},
 				onerror : function(err){
-					console.log('error')
-					console.log(err)
+					var err_msg = "上传骑行数据请求失败"
+					handleError(err_msg)
+					console.error(err_msg,err)
 				}
 			});
 			//todo 获取fit文件并上传
@@ -189,8 +303,23 @@
 		} else if(path === "/athlete/training"){
 			console.info("我的活动");
 			
-			//todo 从cookie中获取最后一次同步日期
-			console.info(handle_data());
+			//获取最后一次同步日期，
+			var last_date_time = localStorage.getItem(last_sync_key);
+			
+			if (last_date_time == null ) {
+				//没有最后一次同步时间 则 开始处理数据
+				handle_data();
+			} else {
+				//下一次同步的时间
+				var next_time = new Date(last_date_time).getTime() + user_info.StravaSyncSecond*1000
+				if (new Date().getTime() >= next_time) {
+					//已经到达同步时间则 开始处理数据
+					handle_data();
+				} else {						
+					//时间没到重新开启定时
+					next_sync(2);
+				}
+			}
 
 		} else {
 			console.info("地址错误["+path+"]进行重定向");
@@ -211,13 +340,13 @@
 					console.info("user_info",user_info);
 					handlePath();
 				}else{
-					console.log('获取用户信息异常',res.status)
-					console.log(res)
+					var err_msg = "获取用户信息状态码异常:["+res.status+"]"
+					console.error(err_msg,res)
 				}
 			},
 			onerror : function(err){
-				console.log('获取用户信息出错')
-				console.log(err)
+				var err_msg = "获取用户信息请求失败"
+				console.error(err_msg,err)
 			}
 		});
 	}

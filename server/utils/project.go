@@ -16,3 +16,13 @@ func IsDev() bool {
 	}
 	return false
 }
+
+
+//获取配置出现错误时 panic
+func GetAppConfig(key string) string {
+	if val, err := beego.AppConfig.String(key); err != nil {
+		panic("\"" + key + "\" not config")
+	} else {
+		return val
+	}
+}

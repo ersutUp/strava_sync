@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"fit_sync_server/conf/db"
+	"fit_sync_server/models"
 	"fit_sync_server/utils"
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/sirupsen/logrus"
@@ -25,9 +27,11 @@ func (uf *UploadFileController) Post() {
 	}
 	defer f.Close()//关闭上传的文件，不然的话会出现临时文件不能清除的情况
 
+	//strava的id
 	id := uf.GetString("id")
 
-	dir := "./fit/"
+	fileFolder := utils.GetAppConfig("fileFolder")
+	dir := "fit/"
 	//如果目录不存在则创建目录
 	createFolderErr := utils.CreateFolder(dir)
 	if createFolderErr != nil {
@@ -37,15 +41,25 @@ func (uf *UploadFileController) Post() {
 		return
 	}
 
+	filePath := dir+id+".fit"
+
 	//保存文件
-	err := uf.SaveToFile("data", dir+id+".fit")
+	err := uf.SaveToFile("data", fileFolder+filePath)
 	if err != nil {
 		uf.Ctx.ResponseWriter.Status = 500
 		uf.Ctx.WriteString("文件保存失败")
 		return
 	}
 
-	//todo 更新数据库
+	//更新数据库
+	var trainingDB models.Training
+	db.Mydb.Model(&models.Training{}).Where("strava_id = ?",id).Find(&trainingDB)
+	if trainingDB.ID > 0 {
+		trainingDB.FitPath = filePath
+		db.Mydb.Select("fit_path").Updates(trainingDB)
+	} else {
+		logrus.Warn("strava id is ["+id+"] not find db row")
+	}
 
 	uf.Ctx.WriteString( "上传成功" )
 }
