@@ -32,6 +32,10 @@
         $("#password").val(user_info.StravaPass);
         $("#remember_me")[0].checked = true;
         $("#login-button").click();
+		
+		setTimeout(function(){
+			location.reload();
+		},30*1000)
     }
 	
 	//微信通知
@@ -192,7 +196,7 @@
 			  
 			  GM_xmlhttpRequest({
 				method: "post",
-				url: server_host+'/v1/upload',
+				url: server_host+'/v1/file',
 				data: fd,
 				synchronous: true,
 				onload: function(res){
@@ -247,10 +251,10 @@
 			console.info("success",val);
 			var data = [];
 			if(val.length > 0){
-				//循环转数组字符串
-				val.forEach(function(d,i){
-					data.push(JSON.stringify(d))
-				})
+				//倒序循环（为了调整入库顺序）转数组字符串
+				for (var i = (val.length - 1); i >= 0 ; i-- ){
+					data.push(JSON.stringify(val[i]))
+				}
 			}
 			console.info("training data:",data)
 			//上传骑行数据给后台同步上传

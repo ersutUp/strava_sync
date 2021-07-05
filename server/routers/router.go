@@ -20,9 +20,9 @@ func init() {
 				&controllers.ObjectController{},
 			),
 		),
-		beego.NSNamespace("/upload",
+		beego.NSNamespace("/file",
 			beego.NSInclude(
-				&controllers.UploadFileController{},
+				&controllers.FileController{},
 			),
 		),
 		beego.NSNamespace("/user",

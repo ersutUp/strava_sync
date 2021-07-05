@@ -11,4 +11,9 @@ type UserInfo struct {
 
 	//server酱
 	SendKey string
+
+	//行者账号
+	XzAccount string
+	//行者密码
+	XzPass string
 }

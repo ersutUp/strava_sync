@@ -4,7 +4,7 @@ import "time"
 
 type Training struct {
 
-	ID int64 `json:"-"`
+	ID int64
 
 	Type string
 	OriginalData string
@@ -12,11 +12,11 @@ type Training struct {
 	StartDate string `json:"start_date"`
 	//里程
 	Distance string
-	StravaId int64 `json:"id"`
+	StravaId int64
 	FitPath string `json:"-"`
-	IsUploadXingzhe   bool `json:"-"`
-	IsUploadBlackbird bool `json:"-"`
-	CreatedAt time.Time `json:"-"`
-	UpdatedAt time.Time `json:"-"`
+	IsUploadXingzhe   int64
+	IsUploadBlackbird bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
 
 }
