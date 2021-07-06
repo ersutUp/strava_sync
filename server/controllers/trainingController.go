@@ -29,7 +29,7 @@ func (this *TrainingController) Post() {
 	//需要上传fit文件的id(strava_id)
 	trainingIDs := []int64{}
 
-	//查询近10条记录中没有fit的记录
+	//查询近n条记录中没有fit的记录
 	trainingDBNotFits := []int64{}
 	//db.Mydb.Model(&models.Training{}).Select("strava_id").Where("fit_path = ''").Order("id desc").Limit(10).Find(&trainingDBNotFits)
 	db.Mydb.Table("(?) as u",db.Mydb.Model(&models.Training{}).Order("id desc").Limit(limit)).Select("strava_id").Where("fit_path = ''").Find(&trainingDBNotFits)
@@ -65,14 +65,14 @@ func (this *TrainingController) Post() {
 
 }
 
-//获取近10条记录中没有上传行者的记录
+//获取近n条记录中没有上传行者的记录
 // @router /xz [get]
 func (this *TrainingController) GetXZ() {
 
 	//需要上传fit文件的id(strava_id)
 	ids := []int64{}
 
-	//查询近10条记录中没有上传行者的记录
+	//查询近n条记录中没有上传行者的记录
 	trainingDBNotUploadXZ := []int64{}
 	db.Mydb.Table("(?) as u",db.Mydb.Model(&models.Training{}).Order("id desc").Limit(limit)).Select("id").Where("is_upload_xingzhe = 0 and fit_path != ''").Find(&trainingDBNotUploadXZ)
 
@@ -101,6 +101,47 @@ func (this *TrainingController) UpdateXZ() {
 	}
 
 	db.Mydb.Select("is_upload_xingzhe").Updates(training)
+
+	this.Ctx.WriteString("ok")
+
+}
+
+//获取近n条记录中没有上传黑鸟的记录
+// @router /blackbird [get]
+func (this *TrainingController) GetBlackbird() {
+
+	//需要上传fit文件的id(strava_id)
+	ids := []int64{}
+
+	//查询近n条记录中没有上传黑鸟的记录(过滤掉虚拟骑行的数据)
+	trainingDBNotUploadBlackbird := []int64{}
+	db.Mydb.Table("(?) as u",db.Mydb.Model(&models.Training{}).Order("id desc").Limit(limit)).Select("id").Where("is_upload_blackbird = 0 and fit_path != '' and type != 'VirtualRide'").Find(&trainingDBNotUploadBlackbird)
+
+	ids = append(ids, trainingDBNotUploadBlackbird...)
+
+	this.Data["json"] = ids
+	this.ServeJSON()
+
+}
+
+//通知已上传黑鸟
+// @router /blackbird [put]
+func (this *TrainingController) UpdateBlackbird() {
+
+	training := models.Training{}
+	json.Unmarshal(this.Ctx.Input.RequestBody, &training)
+
+	if training.IsUploadBlackbird == 0 {
+		this.Ctx.WriteString("not blackbird id")
+		return
+	}
+
+	if training.ID == 0 {
+		this.Ctx.WriteString("not id")
+		return
+	}
+
+	db.Mydb.Select("is_upload_blackbird").Updates(training)
 
 	this.Ctx.WriteString("ok")
 

@@ -15,7 +15,7 @@ type Training struct {
 	StravaId int64
 	FitPath string `json:"-"`
 	IsUploadXingzhe   int64
-	IsUploadBlackbird bool
+	IsUploadBlackbird int64
 	CreatedAt time.Time
 	UpdatedAt time.Time
 

@@ -16,4 +16,9 @@ type UserInfo struct {
 	XzAccount string
 	//行者密码
 	XzPass string
+
+	//黑鸟账号
+	BlackbirdUsername string
+	//黑鸟密码
+	BlackbirdPass string
 }
