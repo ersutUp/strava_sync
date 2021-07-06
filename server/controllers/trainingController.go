@@ -7,6 +7,9 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 )
 
+//近期的多少条记录需要同步，防止一直同步个不停
+var limit = 20
+
 type TrainingController struct {
 	beego.Controller
 }
@@ -29,7 +32,7 @@ func (this *TrainingController) Post() {
 	//查询近10条记录中没有fit的记录
 	trainingDBNotFits := []int64{}
 	//db.Mydb.Model(&models.Training{}).Select("strava_id").Where("fit_path = ''").Order("id desc").Limit(10).Find(&trainingDBNotFits)
-	db.Mydb.Table("(?) as u",db.Mydb.Model(&models.Training{}).Order("id desc").Limit(10)).Select("strava_id").Where("fit_path = ''").Find(&trainingDBNotFits)
+	db.Mydb.Table("(?) as u",db.Mydb.Model(&models.Training{}).Order("id desc").Limit(limit)).Select("strava_id").Where("fit_path = ''").Find(&trainingDBNotFits)
 
 	//没有fit文件也需要上传fit文件
 	trainingIDs = append(trainingIDs, trainingDBNotFits...)
@@ -71,7 +74,7 @@ func (this *TrainingController) GetXZ() {
 
 	//查询近10条记录中没有上传行者的记录
 	trainingDBNotUploadXZ := []int64{}
-	db.Mydb.Table("(?) as u",db.Mydb.Model(&models.Training{}).Order("id desc").Limit(10)).Select("id").Where("is_upload_xingzhe = 0 and fit_path != ''").Find(&trainingDBNotUploadXZ)
+	db.Mydb.Table("(?) as u",db.Mydb.Model(&models.Training{}).Order("id desc").Limit(limit)).Select("id").Where("is_upload_xingzhe = 0 and fit_path != ''").Find(&trainingDBNotUploadXZ)
 
 	ids = append(ids, trainingDBNotUploadXZ...)
 

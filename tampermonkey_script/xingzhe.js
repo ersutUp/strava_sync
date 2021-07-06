@@ -155,7 +155,7 @@
 				} else {
 					var err_msg = "通知后台上传行者成功->状态码异常"
 					handleError(err_msg)
-					console.error(err_msg,err)
+					console.error(err_msg,res)
 					reject(err_msg);
 				}
 			},
@@ -168,8 +168,44 @@
 		})
 	}
 	
+	//上传给行者
+	function uploadFitXZ(id,blob,resolve, reject){
+		var fd = new FormData();
+		fd.append('title', ''+id);
+		fd.append('device', 6);
+		fd.append('sport', 3);
+		fd.append('upload_file_name', blob);
+		$.ajax({
+			method: "post",
+			url: "/api/v4/upload_fits",
+			data: fd,
+			processData : false,
+			contentType : false,
+			success: function (res) {
+				console.log("上传给行者fit文件->响应",res);
+				var resJson = JSON.parse(res);
+				//通知后台上传行者成功
+				noticeServerUploadOk(id,resJson.serverId,resolve, reject)
+			},
+			error:function(err){
+				//由于行者不一定上传成功所以不做handleError的处理
+				var err_msg = "上传给行者fit文件->状态码异常:["+err.status+"],"+err.responseText
+				console.error(err_msg,err)
+				//若返回行者ID 接着上传
+				if (err.responseJSON != undefined && err.responseJSON.code != undefined) {
+					var code= err.responseJSON.code;
+					if(code == 9007){
+						noticeServerUploadOk(id,err.responseJSON.msg,resolve, reject)
+					}
+				}
+				reject(err_msg);
+			}
+		})
+	}
+	
+	
 	//上传行者fit
-	function uploadFit(id) {
+	function uploadFitHandle(id) {
         return new Promise(function(resolve, reject){
 			//获取文件
 			GM_xmlhttpRequest({
@@ -182,39 +218,8 @@
 						let blob = new Blob([res.response], {
 							type: "application/octet-stream",
 						});
-						var fd = new FormData();
-						fd.append('title', ''+id);
-						fd.append('device', 6);
-						fd.append('sport', 3);
-						fd.append('upload_file_name', blob);
 						//上传给行者
-						$.ajax({
-							method: "post",
-							url: "/api/v4/upload_fits",
-							data: fd,
-							processData : false,
-							contentType : false,
-							success: function (res) {
-								console.log("上传给行者fit文件->响应",res);
-								var resJson = JSON.parse(res);
-								//通知后台上传行者成功
-								noticeServerUploadOk(id,resJson.serverId,resolve, reject)
-							},
-							error:function(err){
-								//由于行者不一定上传成功所以不做handleError的处理
-								var err_msg = "上传给行者fit文件->状态码异常:["+err.status+"],"+err.responseText
-								console.error(err_msg,res)
-								//若返回行者ID 接着上传
-								if (err.responseJSON != undefined && err.responseJSON.code != undefined) {
-									var code= err.responseJSON.code;
-									if(code == 9007){
-										noticeServerUploadOk(id,err.responseJSON.msg,resolve, reject)
-									}
-								}
-								reject(err_msg);
-								
-							}
-						})
+						uploadFitXZ(id,blob,resolve,reject)
 					}else{
 						var err_msg = "获取fit文件->状态码异常:["+err.status+"]"
 						handleError(err_msg)
@@ -236,7 +241,7 @@
 		for(var i = 0 ; i < ids.length ; i++ ){
 			var id = ids[i];
 			console.info("id["+id+"]开始处理")
-			await uploadFit(id).then(function(val){
+			await uploadFitHandle(id).then(function(val){
 				console.info("id["+id+"]处理完毕");
 			},function(err){
 				console.info("id["+id+"]出错:"+err);
