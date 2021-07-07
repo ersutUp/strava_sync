@@ -3,3 +3,4 @@ server/.idea/
 server/fit/
 server/routers/commentsRouter_.go
 server/lastupdate.tmp
+server/routers/commentsRouter_controllers.go

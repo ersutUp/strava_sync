@@ -14,7 +14,7 @@
     'use strict';
     var $ = jQuery;
 	
-	var server_host = "http://127.0.0.1:800";
+	var server_host = "http://127.0.0.1:81";
 	
 	var last_sync_key = "last_sync";
 	var err_count = "err_count";
@@ -351,6 +351,9 @@
 			onerror : function(err){
 				var err_msg = "获取用户信息请求失败"
 				console.error(err_msg,err)
+				setTimeout(function(){
+					location.reload();
+				},30*1000)
 			}
 		});
 	}

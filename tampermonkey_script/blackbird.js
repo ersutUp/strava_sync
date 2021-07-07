@@ -14,7 +14,7 @@
 (function() {
     'use strict';
 	
-	var server_host = "http://127.0.0.1:800";
+	var server_host = "http://127.0.0.1:81";
 	
 	var last_sync_key = "last_sync";
 	var err_count = "err_count";
@@ -208,7 +208,7 @@
 						//上传给黑鸟
 						uploadFitBlackbird(id,blob,resolve,reject)
 					}else{
-						var err_msg = "获取fit文件->状态码异常:["+err.status+"]"
+						var err_msg = "获取fit文件->状态码异常:["+res.status+"]"
 						handleError(err_msg)
 						console.error(err_msg,res)
 						reject(err_msg);
@@ -321,6 +321,9 @@
 			onerror : function(err){
 				var err_msg = "获取用户信息请求失败"
 				console.error(err_msg,err)
+				setTimeout(function(){
+					location.reload();
+				},30*1000)
 			}
 		});
 	}
