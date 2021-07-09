@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         xingzhe_upload
 // @namespace    http://ersut.top
-// @version      0.0.1
+// @version      0.0.2
 // @description  从服务端获取文件上传至行者
 // @author       ersut
 // @include      http://www.imxingzhe.com/*
