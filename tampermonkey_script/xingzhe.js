@@ -126,6 +126,16 @@
 
 	//判断是否登录
 	function isLogin(){
+		
+		//行者偶尔504添加判断
+		if(typeof($) == "undefined"){
+			console.info("没有jq,可能是页面504")
+			setTimeout(function(){
+				location.reload();
+			},30*1000)
+			return
+		}
+		
 		var login_status = $(".navbar-right li:eq(0) a").text().indexOf("登录");
 		if ( login_status > -1 ){
 			return false;
@@ -343,13 +353,5 @@
 		});
 	}
 
-	//行者偶尔504添加判断
-	if(typeof($) == "undefined"){
-		console.info("没有jq,可能是页面504")
-		setTimeout(function(){
-			location.reload();
-		},30*1000)
-	} else {
-		getUserInfo();
-	}
+	getUserInfo();
 })();
