@@ -12,12 +12,12 @@
 
 (function() {
     'use strict';
-	
+
 	var server_host = "http://127.0.0.1:81";
-	
+
 	var last_sync_key = "last_sync";
 	var err_count = "err_count";
-		
+
 	var user_info = {};
 
     console.info("启动脚本");
@@ -25,10 +25,10 @@
     function sleep(ms) {
         return new Promise((resolve) => setTimeout(resolve, ms));
     }
-	
+
 	//微信通知
 	function notice_wechat(msg){
-		
+
 		if( user_info.SendKey == undefined){
 			console.info("微信通知未配置")
 			return
@@ -44,7 +44,7 @@
 			}
 		});
 	}
-	
+
 	function handleError(err_msg){
 		var err_num = localStorage.getItem(err_count);
 		if (err_num == null) {
@@ -53,13 +53,13 @@
 			//计数
 			err_num++
 		}
-		
+
 		//错误重试10次后无果则进入下一次定时
 		if (err_num >= 10){
 			localStorage.removeItem(err_count);
 			//todo 微信通知
 			notice_wechat(err_msg)
-			
+
 			next_sync(1);
 			return
 		} else {
@@ -70,13 +70,13 @@
 			},6*1000)
 		}
 	}
-	
+
 	/*
 		1:设置最后一次同步时间 并 开启定时任务
 		2:恢复定时
 	*/
 	function next_sync(type){
-		
+
 		var millisecond = 30*1000;
 		if (user_info.StravaSyncSecond != undefined) {
 			millisecond = millisecond + (user_info.StravaSyncSecond*1000);
@@ -85,11 +85,11 @@
 			millisecond = 300*1000;
 		}
 		var now = new Date();
-		if (type == 1) {			
+		if (type == 1) {
 			//设置最后一次同步时间
 			localStorage.setItem(last_sync_key,now)
 		} else if (type == 2){
-			
+
 			//当前时间
 			var nowTime = now.getTime();
 			//获取最后一次同步日期，
@@ -102,23 +102,23 @@
 					millisecond = millisecond - jet_lag
 				}
 			}
-			
+
 		}
-		
+
 		console.info("距离下次定时："+millisecond)
 		//设置下次同步定时（比配置时间多30秒）
 		setTimeout(function(){
 			location.reload()
 		},millisecond)
 	}
-	
+
 	//登录
     var login = function(){
         $("#loginAccount").val(user_info.XzAccount);
         $("#loginPassword").val(user_info.XzPass);
         $("label[for=agree]").click();
         $("#agree-toggle button").click();
-		
+
 		setTimeout(function(){
 			location.reload();
 		},30*1000)
@@ -133,7 +133,7 @@
 			return true;
 		}
 	}
-	
+
 	//通知后台上传行者成功
 	function noticeServerUploadOk(id,serverId,resolve, reject){
 
@@ -167,7 +167,7 @@
 			}
 		})
 	}
-	
+
 	//上传给行者
 	function uploadFitXZ(id,blob,resolve, reject){
 		var fd = new FormData();
@@ -202,8 +202,8 @@
 			}
 		})
 	}
-	
-	
+
+
 	//上传行者fit
 	function uploadFitHandle(id) {
         return new Promise(function(resolve, reject){
@@ -236,7 +236,7 @@
 			});
 		});
     }
-	
+
 	async function uploadFits(ids){
 		for(var i = 0 ; i < ids.length ; i++ ){
 			var id = ids[i];
@@ -280,7 +280,7 @@
 			}
 		});
 	}
-	
+
 	//处理访问路径
 	function handlePath(){
 		//获取当前地址
@@ -290,11 +290,11 @@
 			location.href = "/user/login"
 		} else if(isLogin()){
 			console.info("已登录");
-			
-			
+
+
 			//获取最后一次同步日期，
 			var last_date_time = localStorage.getItem(last_sync_key);
-			
+
 			if (last_date_time == null ) {
 				//没有最后一次同步时间 则 开始处理数据
 				handle_data();
@@ -304,18 +304,18 @@
 				if (new Date().getTime() >= next_time) {
 					//已经到达同步时间则 开始处理数据
 					handle_data();
-				} else {						
+				} else {
 					//时间没到重新开启定时
 					next_sync(2);
 				}
 			}
-			
+
 		} else {
 			console.info("开始登录");
 			login();
 		}
 	}
-	
+
 	//获取后台用户信息
 	function getUserInfo(){
 		GM_xmlhttpRequest({
@@ -342,7 +342,14 @@
 			}
 		});
 	}
-	
-	
-	getUserInfo();
+
+	//行者偶尔504添加判断
+	if(typeof($) == "undefined"){
+		console.info("没有jq,可能是页面504")
+		setTimeout(function(){
+			location.reload();
+		},30*1000)
+	} else {
+		getUserInfo();
+	}
 })();
