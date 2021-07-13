@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>骑行记录</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+    <!-- 引入 layui.css -->
+    <link rel="stylesheet" href="//unpkg.com/layui@2.6.8/dist/css/layui.css">
+</head>
+<body style="padding: 15px;">
+<table id="table1"></table>
+<script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
+<!-- 引入 layui.js -->
+<script src="//unpkg.com/layui@2.6.8/dist/layui.js"></script>
+<script>
+    layui.use(['table'], function(){
+        var table = layui.table;
+
+        //第一个实例
+        table.render({
+            elem: '#table1'
+            ,page: true //开启分页
+            ,limit:15
+            ,cols: [[ //表头
+                {field: 'ID', title: 'ID', width:80, sort: true, fixed: 'left'}
+                ,{field: 'Name', title: '名称', width:150}
+                ,{field: 'start_date', title: '日期'}
+                ,{field: 'Distance', title: 'km', width:80, sort: true}
+                ,{field: 'IsUploadXingzhe', title: '行者'}
+                ,{field: 'IsUploadBlackbird', title: '黑鸟'}
+            ]]
+        });
+
+        $.get("/v1/training?limit=50",function(data,status){
+            if(status == "success"){
+                table.reload('table1', {
+                    data:data
+                });
+            } else {
+                alert("状态异常:["+status+"]")
+            }
+        });
+
+    });
+</script>
+</body>
+</html>

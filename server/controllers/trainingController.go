@@ -5,6 +5,7 @@ import (
 	"fit_sync_server/conf/db"
 	"fit_sync_server/models"
 	beego "github.com/beego/beego/v2/server/web"
+	"strconv"
 )
 
 //近期的多少条记录需要同步，防止一直同步个不停
@@ -61,6 +62,24 @@ func (this *TrainingController) Post() {
 	}
 
 	this.Data["json"] = trainingIDs
+	this.ServeJSON()
+
+}
+
+
+// @router / [get]
+func (this *TrainingController) Get() {
+	limitStr := this.Ctx.Input.Query("limit")
+	limit,_ := strconv.Atoi(limitStr)
+	if limit == 0 {
+		limit = 10
+	}
+
+	//查询近n条记录
+	trainings := []models.Training{}
+	db.Mydb.Limit(limit).Omit("original_data").Order("created_at desc").Find(&trainings)
+
+	this.Data["json"] = trainings
 	this.ServeJSON()
 
 }

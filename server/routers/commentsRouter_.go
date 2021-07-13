@@ -81,6 +81,15 @@ func init() {
 
     beego.GlobalControllerRouter["fit_sync_server/controllers:TrainingController"] = append(beego.GlobalControllerRouter["fit_sync_server/controllers:TrainingController"],
         beego.ControllerComments{
+            Method: "Get",
+            Router: "/",
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["fit_sync_server/controllers:TrainingController"] = append(beego.GlobalControllerRouter["fit_sync_server/controllers:TrainingController"],
+        beego.ControllerComments{
             Method: "GetBlackbird",
             Router: "/blackbird",
             AllowHTTPMethods: []string{"get"},
