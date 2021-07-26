@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         strava_sync
 // @namespace    http://ersut.top
-// @version      0.0.1
+// @version      0.0.2
 // @description  从strava获取fit文件上传至服务端
 // @author       ersut
 // @include        https://www.strava.com/*
@@ -233,6 +233,10 @@
 
         var page_data_all = [];
         
+		if ( typeof(activityCollectionAdapter) == "undefined" ){
+			location.reload();
+		}
+		
         //分页信息
         var page = activityCollectionAdapter.attributes;
         console.info("page",page);
