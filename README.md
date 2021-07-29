@@ -97,3 +97,7 @@ reboot
 
 以上3个脚本安装方法一样
 
+## 4、可视化页面
+
+- 近期50条数据同步列表：127.0.0.1:81/static/trainings.html 
+	- 其中行者、黑鸟列为0时表示未同步，一般同步周期与 user_infos表中的strava_sync_second值一致
