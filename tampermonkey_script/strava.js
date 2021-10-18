@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         strava_sync
 // @namespace    http://ersut.top
-// @version      0.0.2
+// @version      0.0.3
 // @description  从strava获取fit文件上传至服务端
 // @author       ersut
 // @include        https://www.strava.com/*
@@ -155,7 +155,7 @@
 		}
 		
         //等待数据加载成功
-        for (;1==1;) {
+        for (var i= 0;1==1;i++) {
             await sleep(3000);
             console.info("page",page);
             if(!$.isEmptyObject(page)){
@@ -164,6 +164,9 @@
 					break;
 				}
             }
+			if (i > 10){
+				location.reload();
+			}
         }
 		
 		//过滤数据
